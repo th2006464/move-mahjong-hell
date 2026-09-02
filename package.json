@@ -1,0 +1,24 @@
+{
+  "name": "move-mahjong-hell",
+  "version": "1.0.0",
+  "description": "一个移动端优先的麻将滑动配对解谜小游戏复刻。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/th2006464/move-mahjong-hell.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/th2006464/move-mahjong-hell/issues"
+  },
+  "homepage": "https://github.com/th2006464/move-mahjong-hell#readme",
+  "devDependencies": {
+    "wrangler": "^4.128.0"
+  }
+}
