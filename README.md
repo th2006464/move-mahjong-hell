@@ -13,3 +13,7 @@
 ## 本地运行
 
 直接打开 `public/index.html`，或使用 `wrangler dev`。
+
+## 在线地址
+
+https://move-mahjong-hell.game.foxtang.com
