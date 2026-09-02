@@ -15,8 +15,8 @@ function tap(p){
   const card=grid[p.r][p.c];
   if(!card){
     if(!selected){status('请先点击一张麻将');return}
-    if((selected.r!==p.r&&selected.c!==p.c)||!clear(selected,p)){status('只能点击同一行或列的连续空位');return}
-    animateMove(selected,p);
+    if(selected.r!==p.r&&selected.c!==p.c){status('只能点击同一行或列的空位');return}
+    moveGroup(selected,p);
     return;
   }
   const pair=near(p);
@@ -42,6 +42,37 @@ function animateMove(fromPos,toPos){
     target.style.transform='translate(0,0)';
   }));
   setTimeout(()=>{animating=false;const pair=aligned(toPos);if(pair)remove(toPos,pair,'对齐成功，自动消除！');else{render();status('已挪动，继续寻找同牌')}},210)
+}
+function moveGroup(fromPos,toPos){
+  if(paused||animating||grid[toPos.r][toPos.c])return;
+  const dr=toPos.r===fromPos.r?0:(toPos.r>fromPos.r?1:-1);
+  const dc=toPos.c===fromPos.c?0:(toPos.c>fromPos.c?1:-1);
+  if(!dr&&!dc)return;
+  const sources=[];
+  let r=fromPos.r,c=fromPos.c;
+  while(inside(r,c)&&grid[r][c]){sources.push({r,c,card:grid[r][c]});r+=dr;c+=dc}
+  const end=sources[sources.length-1];
+  const distance=dr?(toPos.r-end.r)*dr:(toPos.c-end.c)*dc;
+  if(distance<1){status('目标空位必须位于选中方向的牌组外侧');return}
+  for(let step=1;step<=distance;step++){
+    const rr=end.r+dr*step,cc=end.c+dc*step;
+    if(!inside(rr,cc)||grid[rr][cc]){status('牌组和目标位置之间必须全部为空');return}
+  }
+  const starts=sources.map(s=>[...board.children].find(e=>+e.dataset.r===s.r&&+e.dataset.c===s.c).getBoundingClientRect());
+  sources.forEach(s=>grid[s.r][s.c]=null);
+  const destinations=sources.map(s=>({r:s.r+dr*distance,c:s.c+dc*distance,card:s.card}));
+  destinations.forEach(d=>grid[d.r][d.c]=d.card);
+  selected=null;render();animating=true;
+  destinations.forEach((d,i)=>{
+    const tile=[...board.children].find(e=>+e.dataset.r===d.r&&+e.dataset.c===d.c),to=tile.getBoundingClientRect(),from=starts[i];
+    tile.style.transition='none';tile.style.transform=`translate(${from.left-to.left}px,${from.top-to.top}px)`;tile.style.zIndex='20';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{tile.style.transition='transform .2s ease-out';tile.style.transform='translate(0,0)'}));
+  });
+  setTimeout(()=>{
+    animating=false;const used=new Set();let removed=0;
+    destinations.forEach(d=>{const key=`${d.r},${d.c}`;if(used.has(key)||!grid[d.r][d.c])return;const pair=aligned(d);if(pair){grid[d.r][d.c]=null;grid[pair.r][pair.c]=null;used.add(key);used.add(`${pair.r},${pair.c}`);score+=10;removed++}});
+    render();status(removed?`整体移动并消除 ${removed} 对！`:`已整体移动 ${sources.length} 张麻将`)
+  },230)
 }
 function move(p,dr,dc,steps=1){
   if(paused||animating)return;
