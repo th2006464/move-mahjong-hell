@@ -28,12 +28,20 @@ function animateMove(fromPos,toPos){
   const card=grid[fromPos.r][fromPos.c];
   const source=[...board.children].find(e=>+e.dataset.r===fromPos.r&&+e.dataset.c===fromPos.c);
   const from=source.getBoundingClientRect();
-  grid[fromPos.r][fromPos.c]=null;selected=null;render();
+  grid[fromPos.r][fromPos.c]=null;
+  grid[toPos.r][toPos.c]=card;
+  selected=null;render();
   const target=[...board.children].find(e=>+e.dataset.r===toPos.r&&+e.dataset.c===toPos.c);
-  const to=target.getBoundingClientRect(),fly=source.cloneNode(true);
-  fly.classList.add('fly');Object.assign(fly.style,{left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`});document.body.append(fly);animating=true;
-  requestAnimationFrame(()=>{fly.style.transform=`translate(${to.left-from.left}px,${to.top-from.top}px)`});
-  setTimeout(()=>{fly.remove();grid[toPos.r][toPos.c]=card;animating=false;const pair=aligned(toPos);if(pair)remove(toPos,pair,'对齐成功，自动消除！');else{render();status('已挪动，继续寻找同牌')}},190)
+  const to=target.getBoundingClientRect();
+  target.style.transition='none';
+  target.style.transform=`translate(${from.left-to.left}px,${from.top-to.top}px)`;
+  target.style.zIndex='20';
+  animating=true;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    target.style.transition='transform .18s ease-out';
+    target.style.transform='translate(0,0)';
+  }));
+  setTimeout(()=>{animating=false;const pair=aligned(toPos);if(pair)remove(toPos,pair,'对齐成功，自动消除！');else{render();status('已挪动，继续寻找同牌')}},210)
 }
 function move(p,dr,dc,steps=1){
   if(paused||animating)return;
