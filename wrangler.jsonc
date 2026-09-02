@@ -9,6 +9,14 @@
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sum-ten-game-data",
+      "database_id": "30c8ccef-3cbb-4659-9298-9be05b39c15a",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

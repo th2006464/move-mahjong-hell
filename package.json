@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/th2006464/move-mahjong-hell#readme",
   "devDependencies": {
+    "@types/node": "^26.4.1",
     "wrangler": "^4.128.0"
   }
 }
