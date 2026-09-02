@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "sum-ten-game-api",
+  "name": "move-mahjong-hell",
   "main": "src/index.js",
   "compatibility_date": "2026-09-02",
   "compatibility_flags": ["nodejs_compat"],
@@ -15,7 +15,7 @@
   },
   "routes": [
     {
-      "pattern": "sum-ten-game.game.foxtang.com",
+      "pattern": "move-mahjong-hell.game.foxtang.com",
       "custom_domain": true
     }
   ]
