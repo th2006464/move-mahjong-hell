@@ -1,44 +1,113 @@
 # 挪对对 · 地狱模式
 
-一个移动端优先的《挪对对》地狱模式复刻，使用 Cloudflare Workers + D1 部署。
+一个移动端优先的麻将滑动配对解谜游戏，仅保留高密度、低容错的地狱模式。项目使用原生 HTML、CSS 和 JavaScript 实现，后端运行于 Cloudflare Workers，进度和排行榜数据存储在 Cloudflare D1。
 
-## 功能
+## 在线体验
 
-- 20×24 高密度随机棋盘，开局满屏铺牌
-- 同行/同列且中间无遮挡的相同麻将，点击即可直接消除
-- 麻将支持横向/纵向拖动；若前方有连续牌，会从所选牌开始整体推动，并按拖动距离移动对应格数
-- 选中麻将后点击目标空位，连续相邻牌可作为牌组整体移动
-- 移动动画、黄框选中、提示遮罩与消除反馈
-- 提示、洗牌、炸弹、重开
-- 每消除一对获得 1 分，记录本局用时
-- D1 云存档、本地备用存档、排行榜与玩家昵称
-- Safari 双击缩放保护
+[move-mahjong-hell.game.foxtang.com](https://move-mahjong-hell.game.foxtang.com)
+
+## 当前版本
+
+- 20 列 × 24 行，共 480 个格子
+- 每局随机生成，开局满屏铺牌，不预留空位
+- 万、条、饼、风牌和三元牌使用完整麻将牌面显示
+- 移动端优先，同时支持鼠标和触摸操作
+- 无倒计时失败；记录本局实际用时
+
+## 核心规则
+
+### 直接消除
+
+点击任意麻将后，系统会寻找同行或同列的相同麻将。只要两张牌之间没有其他麻将阻挡，无论是否紧挨，都可以直接消除。
+
+### 单张拖动
+
+按住麻将向上、下、左、右拖动，麻将会跟随手指移动，并在松手时停到对应格子。移动只能沿直线进行，不能斜向移动，也不能穿过其他牌。
+
+### 连续牌组推动
+
+如果拖动方向上紧挨着其他麻将，选中的麻将以及该方向上的连续牌会作为一个整体被推动：
+
+- 可以从一行或一列中的任意麻将开始推动
+- 牌组保持原有顺序，不会互相穿越
+- 拖动几格，整组就移动几格
+- 最大移动距离由牌组前方的连续空位数量决定
+- 横向和纵向使用相同规则
+
+也可以先点击一张麻将，再点击同行或同列、位于连续牌组外侧的目标空位，完成同样的整体移动。
+
+### 自动消除
+
+移动完成后，系统会重新检查所有被移动的麻将。若某张牌与另一张相同麻将处于同行或同列，且中间没有障碍，则自动消除。每消除一对获得 1 分。
+
+## 游戏功能
+
+- **提示**：高亮一组当前可以直接消除的麻将
+- **洗牌**：随机打乱棋盘上所有剩余麻将的位置
+- **炸弹**：随机移除两张麻将
+- **重开**：生成一盘新的满屏随机棋盘
+- **保存进度**：保存牌面、分数、道具数量和本局用时
+- **加载进度**：优先读取云端存档，网络不可用时读取本地备用存档
+- **结束游戏**：提交当前分数和用时并展示排行榜
+- **排行榜**：展示前 20 名，优先比较分数，同分时用时更短者靠前
+- **Safari 适配**：防止连续点击牌面时触发页面双击放大
+
+## 技术结构
+
+```text
+move-mahjong-hell/
+├── public/index.html                       # 游戏界面、规则和交互
+├── src/index.js                            # Worker API 与静态资源入口
+├── migrations/0001_mahjong_progress_and_scores.sql
+├── wrangler.jsonc                          # Worker、D1 与自定义域名配置
+└── package.json
+```
+
+后端提供以下接口：
+
+- `GET /api/health`：服务健康检查
+- `GET /api/leaderboard`：获取排行榜
+- `GET /api/save`：读取当前设备的云端存档
+- `POST /api/save`：保存当前游戏进度
+- `POST /api/end`：提交本局成绩
 
 ## 本地运行
 
+需要 Node.js 和 npm。
+
 ```bash
+git clone https://github.com/th2006464/move-mahjong-hell.git
+cd move-mahjong-hell
 npm install
 npx wrangler dev
 ```
 
-也可以直接打开 `public/index.html` 体验纯前端版本。
+随后打开 Wrangler 输出的本地地址。直接打开 `public/index.html` 也可以体验纯前端玩法，但云存档和排行榜接口不可用。
 
-## 部署
+## D1 数据库
+
+项目复用现有的 `sum-ten-game-data` D1 数据库，并使用两张独立数据表：
+
+- `mahjong_saves`：玩家云端进度
+- `mahjong_scores`：排行榜成绩
+
+首次部署前执行迁移：
 
 ```bash
 npx wrangler d1 migrations apply sum-ten-game-data --remote
+```
+
+## 部署
+
+Worker、静态资源、D1 绑定和自定义域名均已在 `wrangler.jsonc` 中配置。
+
+```bash
+npx wrangler deploy --dry-run
 npx wrangler deploy --minify
 ```
 
-项目使用现有的 `sum-ten-game-data` D1 数据库，并新增：
+生产域名：`move-mahjong-hell.game.foxtang.com`
 
-- `mahjong_saves`：云端进度
-- `mahjong_scores`：排行榜成绩
-
-## 在线地址
-
-[move-mahjong-hell.game.foxtang.com](https://move-mahjong-hell.game.foxtang.com)
-
-## GitHub
+## 项目地址
 
 [github.com/th2006464/move-mahjong-hell](https://github.com/th2006464/move-mahjong-hell)
