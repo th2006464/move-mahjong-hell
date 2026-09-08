@@ -87,11 +87,16 @@ function move(p,dr,dc,steps=1){
 }
 
 let board=$('board');
-function availableSteps(p,dr,dc){let count=0,r=p.r+dr,c=p.c+dc;while(inside(r,c)&&!grid[r][c]){count++;r+=dr;c+=dc}return count}
-function resetDraggedTile(item){if(!item?.el)return;item.el.style.transition='';item.el.style.transform='';item.el.style.zIndex=''}
+function pushInfo(p,dr,dc){
+  const sources=[];let r=p.r,c=p.c;
+  while(inside(r,c)&&grid[r][c]){sources.push({r,c});r+=dr;c+=dc}
+  let emptyCount=0;while(inside(r,c)&&!grid[r][c]){emptyCount++;r+=dr;c+=dc}
+  return {sources,emptyCount,end:sources[sources.length-1]}
+}
+function resetDraggedTiles(item){(item?.els||[item?.el]).filter(Boolean).forEach(el=>{el.style.transition='';el.style.transform='';el.style.zIndex=''})}
 board.addEventListener('pointerdown',e=>{
   const el=e.target.closest('.tile');if(!el||animating)return;
-  drag={p:{r:+el.dataset.r,c:+el.dataset.c},x:e.clientX,y:e.clientY,el,axis:null,visualDistance:0};
+  drag={p:{r:+el.dataset.r,c:+el.dataset.c},x:e.clientX,y:e.clientY,el,els:[el],axis:null,visualDistance:0};
   board.setPointerCapture?.(e.pointerId)
 });
 board.addEventListener('pointermove',e=>{
@@ -101,22 +106,22 @@ board.addEventListener('pointermove',e=>{
   if(!drag.axis)return;e.preventDefault();
   const cell=board.querySelector('.tile').getBoundingClientRect();
   const delta=drag.axis==='x'?dx:dy,dr=drag.axis==='y'?(delta>0?1:-1):0,dc=drag.axis==='x'?(delta>0?1:-1):0;
-  const unit=drag.axis==='x'?cell.width+1:cell.height+1,maxDistance=availableSteps(drag.p,dr,dc)*unit;
+  const info=pushInfo(drag.p,dr,dc),unit=drag.axis==='x'?cell.width+1:cell.height+1,maxDistance=info.emptyCount*unit;
   drag.visualDistance=Math.sign(delta)*Math.min(Math.abs(delta),maxDistance);
-  drag.el.style.transition='none';drag.el.style.zIndex='30';
-  drag.el.style.transform=drag.axis==='x'?`translateX(${drag.visualDistance}px)`:`translateY(${drag.visualDistance}px)`
+  resetDraggedTiles(drag);drag.els=info.sources.map(p=>[...board.children].find(el=>+el.dataset.r===p.r&&+el.dataset.c===p.c)).filter(Boolean);
+  drag.els.forEach(el=>{el.style.transition='none';el.style.zIndex='30';el.style.transform=drag.axis==='x'?`translateX(${drag.visualDistance}px)`:`translateY(${drag.visualDistance}px)`})
 },{passive:false});
 board.addEventListener('pointerup',e=>{
   if(!drag)return;const d=drag;drag=null;
   const dx=e.clientX-d.x,dy=e.clientY-d.y;
-  if(!d.axis||Math.max(Math.abs(dx),Math.abs(dy))<8){resetDraggedTile(d);tap(d.p);return}
+  if(!d.axis||Math.max(Math.abs(dx),Math.abs(dy))<8){resetDraggedTiles(d);tap(d.p);return}
   const cell=board.querySelector('.tile').getBoundingClientRect(),delta=d.axis==='x'?dx:dy;
   const dr=d.axis==='y'?(delta>0?1:-1):0,dc=d.axis==='x'?(delta>0?1:-1):0,unit=d.axis==='x'?cell.width+1:cell.height+1;
-  const max=availableSteps(d.p,dr,dc),steps=Math.min(max,Math.max(1,Math.round(Math.abs(delta)/unit)));
-  if(!max){resetDraggedTile(d);status('这个方向没有连续空位');return}
-  animateMove(d.p,{r:d.p.r+dr*steps,c:d.p.c+dc*steps})
+  const info=pushInfo(d.p,dr,dc),steps=Math.min(info.emptyCount,Math.max(1,Math.round(Math.abs(delta)/unit)));
+  if(!info.emptyCount){resetDraggedTiles(d);status('前方没有可推动到的空位');return}
+  moveGroup(d.p,{r:info.end.r+dr*steps,c:info.end.c+dc*steps})
 });
-board.addEventListener('pointercancel',()=>{resetDraggedTile(drag);drag=null});
+board.addEventListener('pointercancel',()=>{resetDraggedTiles(drag);drag=null});
 $('hint').onclick=()=>{if(!hints)return;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let p={r,c},q=grid[r][c]&&aligned(p);if(q){hints--;render();[p,q].forEach(x=>[...board.children].find(e=>+e.dataset.r===x.r&&+e.dataset.c===x.c).classList.add('hint'));status('高亮的是一组同线无遮挡对子');setTimeout(render,1800);return}}status('当前没有可直接消除的对子')};$('shuffle').onclick=()=>{let cards=grid.flat().filter(Boolean).sort(()=>Math.random()-.5),i=0;grid=grid.map(row=>row.map(x=>x?cards[i++]:null));selected=null;render();status('牌面已洗乱')};$('bomb').onclick=()=>{if(!bombs)return;let cards=[];grid.forEach((row,r)=>row.forEach((x,c)=>x&&cards.push({r,c})));cards.sort(()=>Math.random()-.5).slice(0,2).forEach(p=>grid[p.r][p.c]=null);bombs--;render();status('炸弹移除了两张麻将')};$('restart').onclick=fresh;
 
 function playerName(){return ($('playerName').value.trim()||'匿名玩家').slice(0,16)}
