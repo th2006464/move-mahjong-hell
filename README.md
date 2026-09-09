@@ -8,6 +8,8 @@
 
 [mahjong.game.foxtang.com](https://mahjong.game.foxtang.com)（参考图牌面独立版）
 
+[move-mahjong-hell.game.foxtang.com/reference-game](https://move-mahjong-hell.game.foxtang.com/reference-game)（参考图牌面备用入口）
+
 ## 当前版本
 
 - 20 列 × 24 行，共 480 个格子

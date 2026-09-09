@@ -117,6 +117,11 @@ export default {
       return json({ ok: false, error: 'server error' }, { status: 500 });
     }
 
+    if (url.pathname === '/reference-game' || url.pathname === '/reference-game/') {
+      const assetUrl = new URL('/', request.url);
+      return env.ASSETS.fetch(new Request(assetUrl, request));
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
