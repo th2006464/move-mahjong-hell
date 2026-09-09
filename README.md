@@ -12,6 +12,7 @@
 - 每局随机生成，开局满屏铺牌，不预留空位
 - 万、条、饼、风牌和三元牌使用完整麻将牌面显示
 - 棋盘贴合屏幕宽度，采用紧凑分隔和放大牌面，提升手机触控辨识度
+- 点击选择麻将时不显示额外高亮框，保持棋盘牌面干净统一
 - 移动端优先，同时支持鼠标和触摸操作
 - 无倒计时失败；记录本局实际用时
 
@@ -65,6 +66,7 @@ move-mahjong-hell/
 ├── public/audio/                           # 背景音乐与消除音效
 ├── src/index.js                            # Worker API 与静态资源入口
 ├── migrations/0001_mahjong_progress_and_scores.sql
+├── migrations/0002_mahjong_save_history.sql
 ├── wrangler.jsonc                          # Worker、D1 与自定义域名配置
 └── package.json
 ```
@@ -93,7 +95,7 @@ npx wrangler dev
 
 ## D1 数据库
 
-项目复用现有的 `sum-ten-game-data` D1 数据库，并使用两张独立数据表：
+项目复用现有的 `sum-ten-game-data` D1 数据库，并使用三张独立数据表：
 
 - `mahjong_saves`：玩家云端进度
 - `mahjong_save_history`：带保存时间的历史进度
