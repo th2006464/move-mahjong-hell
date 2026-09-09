@@ -28,12 +28,38 @@ export default {
       if (url.pathname === '/api/save' && request.method === 'GET') {
         const clientId = url.searchParams.get('clientId');
         if (!validId(clientId)) return json({ ok: false, error: 'invalid clientId' }, { status: 400 });
-        const row = await env.DB.prepare(`
-          SELECT player_name AS playerName, game_state AS gameState, score,
-                 elapsed_seconds AS elapsedSeconds, updated_at AS updatedAt
+        const saveId = url.searchParams.get('saveId');
+        if (saveId && !validId(saveId)) return json({ ok: false, error: 'invalid saveId' }, { status: 400 });
+        const row = saveId
+          ? await env.DB.prepare(`
+              SELECT player_name AS playerName, game_state AS gameState, score,
+                     elapsed_seconds AS elapsedSeconds, saved_at AS updatedAt
+              FROM mahjong_save_history WHERE client_id = ? AND id = ?
+            `).bind(clientId, saveId).first()
+          : await env.DB.prepare(`
+              SELECT player_name AS playerName, game_state AS gameState, score,
+                     elapsed_seconds AS elapsedSeconds, updated_at AS updatedAt
+              FROM mahjong_saves WHERE client_id = ?
+            `).bind(clientId).first();
+        return json({ ok: true, save: row || null });
+      }
+
+      if (url.pathname === '/api/saves' && request.method === 'GET') {
+        const clientId = url.searchParams.get('clientId');
+        if (!validId(clientId)) return json({ ok: false, error: 'invalid clientId' }, { status: 400 });
+        const { results } = await env.DB.prepare(`
+          SELECT id, score, elapsed_seconds AS elapsedSeconds, saved_at AS savedAt
+          FROM mahjong_save_history
+          WHERE client_id = ?
+          ORDER BY saved_at DESC
+          LIMIT 30
+        `).bind(clientId).all();
+        if (results.length) return json({ ok: true, saves: results });
+        const legacy = await env.DB.prepare(`
+          SELECT score, elapsed_seconds AS elapsedSeconds, updated_at AS savedAt
           FROM mahjong_saves WHERE client_id = ?
         `).bind(clientId).first();
-        return json({ ok: true, save: row || null });
+        return json({ ok: true, saves: legacy ? [{ id: 'latest', ...legacy }] : [] });
       }
 
       if (url.pathname === '/api/save' && request.method === 'POST') {
@@ -42,7 +68,17 @@ export default {
         const gameState = JSON.stringify(body.gameState);
         const score = Math.max(0, Math.min(10000, Number(body.score) || 0));
         const elapsed = Math.max(0, Math.min(864000, Number(body.elapsedSeconds) || 0));
+        const saveId = validId(body.saveId) ? body.saveId : crypto.randomUUID();
+        const savedAt = new Date().toISOString();
         if (gameState.length > 200000) return json({ ok: false, error: 'save too large' }, { status: 413 });
+        await env.DB.prepare(`
+          INSERT INTO mahjong_save_history(id, client_id, player_name, game_state, score, elapsed_seconds, saved_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            player_name=excluded.player_name, game_state=excluded.game_state,
+            score=excluded.score, elapsed_seconds=excluded.elapsed_seconds,
+            saved_at=excluded.saved_at
+        `).bind(saveId, body.clientId, cleanName(body.playerName), gameState, score, elapsed, savedAt).run();
         await env.DB.prepare(`
           INSERT INTO mahjong_saves(client_id, player_name, game_state, score, elapsed_seconds, updated_at)
           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -51,7 +87,13 @@ export default {
             score=excluded.score, elapsed_seconds=excluded.elapsed_seconds,
             updated_at=CURRENT_TIMESTAMP
         `).bind(body.clientId, cleanName(body.playerName), gameState, score, elapsed).run();
-        return json({ ok: true });
+        await env.DB.prepare(`
+          DELETE FROM mahjong_save_history
+          WHERE client_id = ? AND id NOT IN (
+            SELECT id FROM mahjong_save_history WHERE client_id = ? ORDER BY saved_at DESC LIMIT 30
+          )
+        `).bind(body.clientId, body.clientId).run();
+        return json({ ok: true, saveId, savedAt });
       }
 
       if (url.pathname === '/api/end' && request.method === 'POST') {
