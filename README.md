@@ -75,7 +75,7 @@ move-mahjong-hell/
 后端提供以下接口：
 
 - `GET /api/health`：服务健康检查
-- `GET /api/leaderboard`：获取排行榜
+- `GET /api/leaderboard`：获取排行榜与保存记录（显示分数、用时、日期时间和记录类型）
 - `GET /api/saves`：获取当前设备的历史存档列表
 - `GET /api/save`：读取当前设备的云端存档
 - `POST /api/save`：保存当前游戏进度
