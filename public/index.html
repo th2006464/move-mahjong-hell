@@ -8,16 +8,19 @@ const bgMusic=$('bgMusic'),matchSound=$('matchSound');bgMusic.volume=.28;matchSo
 const saveModal=document.createElement('div');saveModal.id='saveListModal';saveModal.className='modal-wrap hidden';saveModal.innerHTML='<section class="panel"><h2>选择存档</h2><div class="save-list" id="saveList"></div><button class="close-btn" data-close="saveListModal">返回</button></section>';document.body.append(saveModal);
 const pauseModal=document.createElement('div');pauseModal.id='pauseModal';pauseModal.className='modal-wrap hidden';pauseModal.innerHTML='<section class="panel pause-panel"><h2>游戏已暂停</h2><p>本局计时已停止</p><button class="close-btn" id="resumeGame">▶ 继续游戏</button></section>';document.body.append(pauseModal);
 const deadModal=document.createElement('div');deadModal.id='deadModal';deadModal.className='modal-wrap hidden';deadModal.innerHTML='<section class="panel pause-panel"><h2>暂时无牌可消</h2><p>本局计时已暂停。你可以洗牌继续，或结束本局。</p><div class="menu-actions"><button id="deadShuffle">🔀 洗牌继续</button><button class="danger" id="deadEnd">结束游戏</button></div></section>';document.body.append(deadModal);
+const restartModal=document.createElement('div');restartModal.id='restartModal';restartModal.className='modal-wrap hidden';restartModal.innerHTML='<section class="panel pause-panel"><h2>确认重新开始？</h2><p>当前局尚未保存的进度将丢失。</p><div class="menu-actions"><button id="cancelRestart">继续本局</button><button class="danger" id="confirmRestart">确认重开</button></div></section>';document.body.append(restartModal);
 function startMusic(){if(bgMusic.paused)bgMusic.play().catch(()=>{})}
 function playMatchSound(){matchSound.currentTime=0;matchSound.play().catch(()=>{})}
 function pauseGame(){if(paused||ended||animating)return;elapsedBase=elapsed();paused=true;bgMusic.pause();$('pauseModal').classList.remove('hidden');status('游戏已暂停')}
 function resumeGame(){if(ended)return;startedAt=Date.now();paused=false;$('pauseModal').classList.add('hidden');startMusic();status('游戏继续')}
+function openRestartConfirm(){if(paused||ended||animating)return;elapsedBase=elapsed();paused=true;bgMusic.pause();$('restartModal').classList.remove('hidden');status('请确认是否重新开始')}
+function cancelRestart(){if(ended)return;$('restartModal').classList.add('hidden');startedAt=Date.now();paused=false;startMusic();status('继续当前游戏')}
 function status(t){$('status').textContent=t}
 function inside(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
 function same(a,b){return a&&b&&a.id===b.id}
 function elapsed(){return elapsedBase+((ended||paused)?0:Math.floor((Date.now()-startedAt)/1000))}
 function formatTime(seconds){return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`}
-function fresh(){let cards=[];for(let i=0;i<ROWS*COLS/2;i++)cards.push(TYPES[i%TYPES.length],TYPES[i%TYPES.length]);cards.sort(()=>Math.random()-.5);grid=Array.from({length:ROWS},(_,r)=>cards.slice(r*COLS,(r+1)*COLS));selected=null;score=0;hints=3;bombs=1;elapsedBase=0;startedAt=Date.now();ended=false;paused=false;$('deadModal').classList.add('hidden');render();status('点击相邻同牌，或拖动麻将进入空位');checkGameState()}
+function fresh(){let cards=[];for(let i=0;i<ROWS*COLS/2;i++)cards.push(TYPES[i%TYPES.length],TYPES[i%TYPES.length]);cards.sort(()=>Math.random()-.5);grid=Array.from({length:ROWS},(_,r)=>cards.slice(r*COLS,(r+1)*COLS));selected=null;score=0;hints=3;bombs=1;elapsedBase=0;startedAt=Date.now();ended=false;paused=false;$('deadModal').classList.add('hidden');$('restartModal').classList.add('hidden');render();status('点击相邻同牌，或拖动麻将进入空位');checkGameState()}
 function render(){let b=$('board');b.replaceChildren();grid.forEach((row,r)=>row.forEach((card,c)=>{let e=document.createElement('div');e.className=card?`tile ${card.kind}`:'tile empty';e.dataset.r=r;e.dataset.c=c;if(card){e.innerHTML=`<span class="glyph">${card.glyph}</span>`;if(selected?.r===r&&selected?.c===c)e.classList.add('selected')}b.append(e)}));$('score').textContent=score;$('hint').innerHTML=`💡 提示 <span>${hints}</span>`;$('bomb').innerHTML='⏸ 暂停'}
 function clearOn(board,a,b){if(a.r===b.r){for(let c=Math.min(a.c,b.c)+1;c<Math.max(a.c,b.c);c++)if(board[a.r][c])return false;return true}if(a.c===b.c){for(let r=Math.min(a.r,b.r)+1;r<Math.max(a.r,b.r);r++)if(board[r][a.c])return false;return true}return false}function clear(a,b){return clearOn(grid,a,b)}
 function near(p){let card=grid[p.r][p.c];return [[-1,0],[1,0],[0,-1],[0,1]].map(([dr,dc])=>({r:p.r+dr,c:p.c+dc})).find(q=>inside(q.r,q.c)&&same(card,grid[q.r][q.c]))}
@@ -167,7 +170,7 @@ board.addEventListener('pointerup',e=>{
 });
 board.addEventListener('pointercancel',()=>{resetDraggedTiles(drag);drag=null});
 board.addEventListener('touchmove',event=>event.preventDefault(),{passive:false});
-function shuffleBoard(){let cards=grid.flat().filter(Boolean).sort(()=>Math.random()-.5),i=0;grid=grid.map(row=>row.map(x=>x?cards[i++]:null));selected=null;render();status('牌面已洗乱');checkGameState()}$('hint').onclick=()=>{if(!hints)return;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let p={r,c},q=grid[r][c]&&aligned(p);if(q){hints--;render();[p,q].forEach(x=>[...board.children].find(e=>+e.dataset.r===x.r&&+e.dataset.c===x.c).classList.add('hint'));status('高亮的是一组同线无遮挡对子');setTimeout(render,1800);return}}status('当前没有可直接消除的对子')};$('shuffle').onclick=()=>{if(paused||ended)return;shuffleBoard()};$('bomb').onclick=pauseGame;$('restart').onclick=fresh;
+function shuffleBoard(){let cards=grid.flat().filter(Boolean).sort(()=>Math.random()-.5),i=0;grid=grid.map(row=>row.map(x=>x?cards[i++]:null));selected=null;render();status('牌面已洗乱');checkGameState()}$('hint').onclick=()=>{if(!hints)return;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let p={r,c},q=grid[r][c]&&aligned(p);if(q){hints--;render();[p,q].forEach(x=>[...board.children].find(e=>+e.dataset.r===x.r&&+e.dataset.c===x.c).classList.add('hint'));status('高亮的是一组同线无遮挡对子');setTimeout(render,1800);return}}status('当前没有可直接消除的对子')};$('shuffle').onclick=()=>{if(paused||ended)return;shuffleBoard()};$('bomb').onclick=pauseGame;$('restart').onclick=openRestartConfirm;
 
 function playerName(){return ($('playerName').value.trim()||'匿名玩家').slice(0,16)}
 function snapshot(){return {grid:grid.map(row=>row.map(card=>card?.id||null)),hints,bombs}}
@@ -213,7 +216,7 @@ async function showLeaderboard(isResult=false){
 }
 function escapeHtml(value){const el=document.createElement('span');el.textContent=value;return el.innerHTML}
 async function endGame(prefix=''){
-  if(ended)return;const duration=elapsed();ended=true;elapsedBase=duration;paused=true;bgMusic.pause();$('deadModal').classList.add('hidden');localStorage.setItem('mahjong-player-name',playerName());$('resultSummary').textContent=`${prefix?`${prefix} `:''}${playerName()} · ${score} 分 · ${formatTime(duration)}`;$('settingsModal').classList.add('hidden');
+  if(ended)return;const duration=elapsed();ended=true;elapsedBase=duration;paused=true;bgMusic.pause();$('deadModal').classList.add('hidden');$('restartModal').classList.add('hidden');localStorage.setItem('mahjong-player-name',playerName());$('resultSummary').textContent=`${prefix?`${prefix} `:''}${playerName()} · ${score} 分 · ${formatTime(duration)}`;$('settingsModal').classList.add('hidden');
   try{await fetch('/api/end',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId,playerName:playerName(),score,durationSeconds:duration})})}catch{}
   await showLeaderboard(true)
 }
@@ -221,6 +224,7 @@ $('playerName').value=localStorage.getItem('mahjong-player-name')||`玩家${clie
 $('settings').onclick=()=>$('settingsModal').classList.remove('hidden');$('rankOpen').onclick=()=>$('rankModal').classList.remove('hidden')||showLeaderboard();$('showRank').onclick=()=>showLeaderboard();$('saveGame').onclick=saveGame;$('loadGame').onclick=loadGame;$('endGame').onclick=endGame;document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>$(button.dataset.close).classList.add('hidden'));
 $('resumeGame').onclick=resumeGame;
 $('deadShuffle').onclick=()=>{if(ended)return;$('deadModal').classList.add('hidden');startedAt=Date.now();paused=false;startMusic();shuffleBoard()};$('deadEnd').onclick=()=>endGame('本局结束。');
+$('cancelRestart').onclick=cancelRestart;$('confirmRestart').onclick=()=>{fresh();startMusic()};
 setInterval(()=>{$('clock').textContent=formatTime(elapsed())},500);
 document.addEventListener('dblclick',event=>event.preventDefault(),{passive:false});document.addEventListener('gesturestart',event=>event.preventDefault(),{passive:false});document.addEventListener('selectstart',event=>event.preventDefault(),{passive:false});document.addEventListener('dragstart',event=>event.preventDefault(),{passive:false});document.addEventListener('contextmenu',event=>{if(event.target.closest?.('.app'))event.preventDefault()},{passive:false});
 window.addEventListener('load',startMusic,{once:true});document.addEventListener('pointerdown',startMusic,{once:true});document.addEventListener('keydown',startMusic,{once:true});
