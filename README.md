@@ -6,11 +6,14 @@
 
 [move-mahjong-hell.game.foxtang.com](https://move-mahjong-hell.game.foxtang.com)
 
+[mahjong.game.foxtang.com](https://mahjong.game.foxtang.com)（参考图牌面独立版）
+
 ## 当前版本
 
 - 20 列 × 24 行，共 480 个格子
 - 每局随机生成，开局满屏铺牌，不预留空位
 - 万、条、饼、风牌和三元牌使用完整麻将牌面显示
+- 参考图牌面版通过一张 WebP 图集和 CSS 精灵定位直接渲染，不使用 iframe
 - 麻将采用约 1:1.16 的竖向长方形比例，棋盘居中并在手机左右保留安全区
 - 点击选择麻将时不显示额外高亮框，保持棋盘牌面干净统一
 - 消除后的空格保留细参考线，方便沿行列判断移动落点
@@ -50,7 +53,7 @@
 - **提示**：高亮一组当前可以直接消除的麻将
 - **洗牌**：随机打乱棋盘上所有剩余麻将的位置
 - **暂停/继续**：暂停时冻结本局计时并锁定棋盘，点击弹窗中的继续按钮恢复游戏和计时
-- **重开**：生成一盘新的满屏随机棋盘
+- **重开**：确认后生成一盘新的满屏随机棋盘
 - **保存进度**：保存牌面、分数、道具数量、本局用时和保存时间，保留最近 30 个历史存档
 - **加载进度**：按年月日和具体时间选择云端历史存档，网络不可用时可读取本地备用存档
 - **结束游戏**：提交当前分数和用时并展示排行榜
@@ -64,6 +67,7 @@
 ```text
 move-mahjong-hell/
 ├── public/index.html                       # 游戏界面、规则和交互
+├── public/assets/reference-tile-atlas.webp # 参考图麻将牌面图集
 ├── public/audio/                           # 背景音乐与消除音效
 ├── src/index.js                            # Worker API 与静态资源入口
 ├── migrations/0001_mahjong_progress_and_scores.sql
@@ -117,7 +121,10 @@ npx wrangler deploy --dry-run
 npx wrangler deploy --minify
 ```
 
-生产域名：`move-mahjong-hell.game.foxtang.com`
+生产域名：
+
+- `move-mahjong-hell.game.foxtang.com`：原牌面版本
+- `mahjong.game.foxtang.com`：参考图牌面独立版本
 
 ## 项目地址
 

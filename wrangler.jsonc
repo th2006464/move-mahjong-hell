@@ -25,6 +25,10 @@
     {
       "pattern": "move-mahjong-hell.game.foxtang.com",
       "custom_domain": true
+    },
+    {
+      "pattern": "mahjong.game.foxtang.com",
+      "custom_domain": true
     }
   ]
 }
