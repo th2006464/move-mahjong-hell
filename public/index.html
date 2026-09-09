@@ -7,6 +7,7 @@ const ROWS=24,COLS=20,GLYPHS=["🀇︎","🀈︎","🀉︎","🀊︎","🀋︎",
 const bgMusic=$('bgMusic'),matchSound=$('matchSound');bgMusic.volume=.28;matchSound.volume=.8;
 const saveModal=document.createElement('div');saveModal.id='saveListModal';saveModal.className='modal-wrap hidden';saveModal.innerHTML='<section class="panel"><h2>选择存档</h2><div class="save-list" id="saveList"></div><button class="close-btn" data-close="saveListModal">返回</button></section>';document.body.append(saveModal);
 const pauseModal=document.createElement('div');pauseModal.id='pauseModal';pauseModal.className='modal-wrap hidden';pauseModal.innerHTML='<section class="panel pause-panel"><h2>游戏已暂停</h2><p>本局计时已停止</p><button class="close-btn" id="resumeGame">▶ 继续游戏</button></section>';document.body.append(pauseModal);
+const deadModal=document.createElement('div');deadModal.id='deadModal';deadModal.className='modal-wrap hidden';deadModal.innerHTML='<section class="panel pause-panel"><h2>暂时无牌可消</h2><p>本局计时已暂停。你可以洗牌继续，或结束本局。</p><div class="menu-actions"><button id="deadShuffle">🔀 洗牌继续</button><button class="danger" id="deadEnd">结束游戏</button></div></section>';document.body.append(deadModal);
 function startMusic(){if(bgMusic.paused)bgMusic.play().catch(()=>{})}
 function playMatchSound(){matchSound.currentTime=0;matchSound.play().catch(()=>{})}
 function pauseGame(){if(paused||ended||animating)return;elapsedBase=elapsed();paused=true;bgMusic.pause();$('pauseModal').classList.remove('hidden');status('游戏已暂停')}
@@ -16,11 +17,11 @@ function inside(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
 function same(a,b){return a&&b&&a.id===b.id}
 function elapsed(){return elapsedBase+((ended||paused)?0:Math.floor((Date.now()-startedAt)/1000))}
 function formatTime(seconds){return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`}
-function fresh(){let cards=[];for(let i=0;i<ROWS*COLS/2;i++)cards.push(TYPES[i%TYPES.length],TYPES[i%TYPES.length]);cards.sort(()=>Math.random()-.5);grid=Array.from({length:ROWS},(_,r)=>cards.slice(r*COLS,(r+1)*COLS));selected=null;score=0;hints=3;bombs=1;elapsedBase=0;startedAt=Date.now();ended=false;paused=false;render();status('点击相邻同牌，或拖动麻将进入空位')}
+function fresh(){let cards=[];for(let i=0;i<ROWS*COLS/2;i++)cards.push(TYPES[i%TYPES.length],TYPES[i%TYPES.length]);cards.sort(()=>Math.random()-.5);grid=Array.from({length:ROWS},(_,r)=>cards.slice(r*COLS,(r+1)*COLS));selected=null;score=0;hints=3;bombs=1;elapsedBase=0;startedAt=Date.now();ended=false;paused=false;$('deadModal').classList.add('hidden');render();status('点击相邻同牌，或拖动麻将进入空位');checkGameState()}
 function render(){let b=$('board');b.replaceChildren();grid.forEach((row,r)=>row.forEach((card,c)=>{let e=document.createElement('div');e.className=card?`tile ${card.kind}`:'tile empty';e.dataset.r=r;e.dataset.c=c;if(card){e.innerHTML=`<span class="glyph">${card.glyph}</span>`;if(selected?.r===r&&selected?.c===c)e.classList.add('selected')}b.append(e)}));$('score').textContent=score;$('hint').innerHTML=`💡 提示 <span>${hints}</span>`;$('bomb').innerHTML='⏸ 暂停'}
-function clear(a,b){if(a.r===b.r){for(let c=Math.min(a.c,b.c)+1;c<Math.max(a.c,b.c);c++)if(grid[a.r][c])return false;return true}if(a.c===b.c){for(let r=Math.min(a.r,b.r)+1;r<Math.max(a.r,b.r);r++)if(grid[r][a.c])return false;return true}return false}
+function clearOn(board,a,b){if(a.r===b.r){for(let c=Math.min(a.c,b.c)+1;c<Math.max(a.c,b.c);c++)if(board[a.r][c])return false;return true}if(a.c===b.c){for(let r=Math.min(a.r,b.r)+1;r<Math.max(a.r,b.r);r++)if(board[r][a.c])return false;return true}return false}function clear(a,b){return clearOn(grid,a,b)}
 function near(p){let card=grid[p.r][p.c];return [[-1,0],[1,0],[0,-1],[0,1]].map(([dr,dc])=>({r:p.r+dr,c:p.c+dc})).find(q=>inside(q.r,q.c)&&same(card,grid[q.r][q.c]))}
-function remove(a,b,msg){grid[a.r][a.c]=null;grid[b.r][b.c]=null;score+=1;selected=null;playMatchSound();render();status(msg)}
+function remove(a,b,msg){grid[a.r][a.c]=null;grid[b.r][b.c]=null;score+=1;selected=null;playMatchSound();render();status(msg);checkGameState()}
 function tap(p){
   if(paused||animating)return;
   const card=grid[p.r][p.c];
@@ -34,7 +35,31 @@ function tap(p){
   if(pair){remove(p,pair,'同线无遮挡，配对成功！');return}
   selected=p;render();status('已选择麻将：点击同一行或列的空位')
 }
-function aligned(p){let card=grid[p.r][p.c];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let q={r,c};if((r!==p.r||c!==p.c)&&same(card,grid[r][c])&&clear(p,q))return q}return null}
+function alignedOn(board,p){let card=board[p.r][p.c];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let q={r,c};if((r!==p.r||c!==p.c)&&same(card,board[r][c])&&clearOn(board,p,q))return q}return null}function aligned(p){return alignedOn(grid,p)}
+function hasPlayableAction(){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(grid[r][c]&&aligned({r,c}))return true;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(!grid[r][c])continue;
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      const sources=[];let sr=r,sc=c;
+      while(inside(sr,sc)&&grid[sr][sc]){sources.push({r:sr,c:sc,card:grid[sr][sc]});sr+=dr;sc+=dc}
+      let spaces=0;while(inside(sr,sc)&&!grid[sr][sc]){spaces++;sr+=dr;sc+=dc}
+      for(let distance=1;distance<=spaces;distance++){
+        const next=grid.map(row=>row.slice());sources.forEach(s=>next[s.r][s.c]=null);
+        const destinations=sources.map(s=>({r:s.r+dr*distance,c:s.c+dc*distance,card:s.card}));destinations.forEach(d=>next[d.r][d.c]=d.card);
+        if(destinations.some(d=>alignedOn(next,d)))return true;
+      }
+    }
+  }
+  return false
+}
+function checkGameState(){
+  if(ended||animating)return;
+  if(!grid.flat().some(Boolean)){endGame('全部麻将已消除，通关！');return}
+  if(!hasPlayableAction()){
+    elapsedBase=elapsed();paused=true;bgMusic.pause();$('deadModal').classList.remove('hidden');status('暂无可消除牌，请选择洗牌或结束游戏')
+  }
+}
 function animateMove(fromPos,toPos){
   const card=grid[fromPos.r][fromPos.c];
   const source=[...board.children].find(e=>+e.dataset.r===fromPos.r&&+e.dataset.c===fromPos.c);
@@ -93,7 +118,7 @@ function moveGroup(fromPos,toPos){
   setTimeout(()=>{
     animating=false;const used=new Set();let removed=0;
     destinations.forEach(d=>{const key=`${d.r},${d.c}`;if(used.has(key)||!grid[d.r][d.c])return;const pair=aligned(d);if(pair){grid[d.r][d.c]=null;grid[pair.r][pair.c]=null;used.add(key);used.add(`${pair.r},${pair.c}`);score+=1;removed++}});
-    if(removed)playMatchSound();render();status(`整体移动并消除 ${removed} 对！`)
+    if(removed)playMatchSound();render();status(`整体移动并消除 ${removed} 对！`);checkGameState()
   },230)
 }
 function move(p,dr,dc,steps=1){
@@ -142,7 +167,7 @@ board.addEventListener('pointerup',e=>{
 });
 board.addEventListener('pointercancel',()=>{resetDraggedTiles(drag);drag=null});
 board.addEventListener('touchmove',event=>event.preventDefault(),{passive:false});
-$('hint').onclick=()=>{if(!hints)return;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let p={r,c},q=grid[r][c]&&aligned(p);if(q){hints--;render();[p,q].forEach(x=>[...board.children].find(e=>+e.dataset.r===x.r&&+e.dataset.c===x.c).classList.add('hint'));status('高亮的是一组同线无遮挡对子');setTimeout(render,1800);return}}status('当前没有可直接消除的对子')};$('shuffle').onclick=()=>{let cards=grid.flat().filter(Boolean).sort(()=>Math.random()-.5),i=0;grid=grid.map(row=>row.map(x=>x?cards[i++]:null));selected=null;render();status('牌面已洗乱')};$('bomb').onclick=pauseGame;$('restart').onclick=fresh;
+function shuffleBoard(){let cards=grid.flat().filter(Boolean).sort(()=>Math.random()-.5),i=0;grid=grid.map(row=>row.map(x=>x?cards[i++]:null));selected=null;render();status('牌面已洗乱');checkGameState()}$('hint').onclick=()=>{if(!hints)return;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){let p={r,c},q=grid[r][c]&&aligned(p);if(q){hints--;render();[p,q].forEach(x=>[...board.children].find(e=>+e.dataset.r===x.r&&+e.dataset.c===x.c).classList.add('hint'));status('高亮的是一组同线无遮挡对子');setTimeout(render,1800);return}}status('当前没有可直接消除的对子')};$('shuffle').onclick=()=>{if(paused||ended)return;shuffleBoard()};$('bomb').onclick=pauseGame;$('restart').onclick=fresh;
 
 function playerName(){return ($('playerName').value.trim()||'匿名玩家').slice(0,16)}
 function snapshot(){return {grid:grid.map(row=>row.map(card=>card?.id||null)),hints,bombs}}
@@ -151,7 +176,7 @@ function applySave(data){
   if(!Array.isArray(state?.grid)||state.grid.length!==ROWS)throw new Error('存档格式错误');
   const restored=state.grid.map(row=>row.map(id=>id===null?null:typeMap.get(id)||typeMap.get(LEGACY_ID_MAP[id]))).filter(row=>row.length===COLS);
   if(restored.length!==ROWS||restored.some(row=>row.some(card=>card===undefined)))throw new Error('存档牌面错误');
-  grid=restored;score=Number(data.score)||0;elapsedBase=Number(data.elapsedSeconds)||0;hints=Number(state.hints??3);bombs=Number(state.bombs??1);startedAt=Date.now();ended=false;paused=false;selected=null;render();status('进度已加载')
+  grid=restored;score=Number(data.score)||0;elapsedBase=Number(data.elapsedSeconds)||0;hints=Number(state.hints??3);bombs=Number(state.bombs??1);startedAt=Date.now();ended=false;paused=false;selected=null;render();status('进度已加载');checkGameState()
 }
 async function saveGame(){
   const payload={saveId:crypto.randomUUID(),savedAt:new Date().toISOString(),clientId,playerName:playerName(),gameState:snapshot(),score,elapsedSeconds:elapsed()};
@@ -187,14 +212,15 @@ async function showLeaderboard(isResult=false){
   try{const response=await fetch('/api/leaderboard'),data=await response.json();$('rankBody').innerHTML=data.entries.length?data.entries.map((entry,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(entry.playerName)}<small>${entry.recordType==='completed'?'完成':'存档'} · ${saveTime(entry.recordedAt)}</small></td><td>${entry.score}</td><td>${formatTime(entry.durationSeconds)}</td></tr>`).join(''):'<tr><td colspan="4">还没有记录</td></tr>'}catch{$('rankBody').innerHTML='<tr><td colspan="4">排行榜加载失败</td></tr>'}
 }
 function escapeHtml(value){const el=document.createElement('span');el.textContent=value;return el.innerHTML}
-async function endGame(){
-  const duration=elapsed();ended=true;elapsedBase=duration;paused=true;localStorage.setItem('mahjong-player-name',playerName());$('resultSummary').textContent=`${playerName()} · ${score} 分 · ${formatTime(duration)}`;$('settingsModal').classList.add('hidden');
+async function endGame(prefix=''){
+  if(ended)return;const duration=elapsed();ended=true;elapsedBase=duration;paused=true;bgMusic.pause();$('deadModal').classList.add('hidden');localStorage.setItem('mahjong-player-name',playerName());$('resultSummary').textContent=`${prefix?`${prefix} `:''}${playerName()} · ${score} 分 · ${formatTime(duration)}`;$('settingsModal').classList.add('hidden');
   try{await fetch('/api/end',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId,playerName:playerName(),score,durationSeconds:duration})})}catch{}
   await showLeaderboard(true)
 }
 $('playerName').value=localStorage.getItem('mahjong-player-name')||`玩家${clientId.slice(0,4)}`;
 $('settings').onclick=()=>$('settingsModal').classList.remove('hidden');$('rankOpen').onclick=()=>$('rankModal').classList.remove('hidden')||showLeaderboard();$('showRank').onclick=()=>showLeaderboard();$('saveGame').onclick=saveGame;$('loadGame').onclick=loadGame;$('endGame').onclick=endGame;document.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>$(button.dataset.close).classList.add('hidden'));
 $('resumeGame').onclick=resumeGame;
+$('deadShuffle').onclick=()=>{if(ended)return;$('deadModal').classList.add('hidden');startedAt=Date.now();paused=false;startMusic();shuffleBoard()};$('deadEnd').onclick=()=>endGame('本局结束。');
 setInterval(()=>{$('clock').textContent=formatTime(elapsed())},500);
 document.addEventListener('dblclick',event=>event.preventDefault(),{passive:false});document.addEventListener('gesturestart',event=>event.preventDefault(),{passive:false});document.addEventListener('selectstart',event=>event.preventDefault(),{passive:false});document.addEventListener('dragstart',event=>event.preventDefault(),{passive:false});document.addEventListener('contextmenu',event=>{if(event.target.closest?.('.app'))event.preventDefault()},{passive:false});
 window.addEventListener('load',startMusic,{once:true});document.addEventListener('pointerdown',startMusic,{once:true});document.addEventListener('keydown',startMusic,{once:true});
