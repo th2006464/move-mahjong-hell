@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>挪对对 · SVG 牌面游戏预览</title>
+  <style>*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#a9ddef}iframe{display:block;width:100%;height:100%;border:0}</style>
+</head>
+<body>
+  <iframe id="game" src="/" title="挪对对 SVG 牌面游戏预览"></iframe>
+  <script>
+    const frame=document.querySelector('#game');
+    const C={red:'#d32032',blue:'#20458e',green:'#176c43',dotBlue:'#315c9e',dotRed:'#d83a4b',dark:'#124f38',paper:'#f7f8f3'};
+    const CN=['一','二','三','四','五','六','七','八','九'];
+    const GLYPHS=['🀇','🀈','🀉','🀊','🀋','🀌','🀍','🀎','🀏','🀐','🀑','🀒','🀓','🀔','🀕','🀖','🀗','🀘','🀙','🀚','🀛','🀜','🀝','🀞','🀟','🀠','🀡','🀄','🀅','🀆'];
+    const wrap=(content,label)=>`<svg viewBox="0 0 100 122" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">${content}</svg>`;
+    const stroke=(color,width=3)=>`fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`;
+    function man(n){return wrap(`<text x="50" y="45" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="40" font-weight="800" fill="${C.blue}" stroke="${C.blue}" stroke-width=".45">${CN[n-1]}</text><text x="50" y="91" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="43" font-weight="900" fill="${C.red}" stroke="${C.red}" stroke-width=".35">萬</text>`,`${CN[n-1]}萬`)}
+    function bird(){return `<g stroke="${C.green}" stroke-linecap="round" stroke-linejoin="round"><path d="M35 90c8-15 7-29 12-39 4-9 12-16 21-15 7 1 11 6 10 11-1 5-7 8-14 7 3 13 1 29-9 40" fill="${C.paper}" stroke-width="3"/><path d="M48 55c-9-5-17-4-24 1 7 2 12 6 16 12M51 65c10 0 17 5 23 14-11-4-18-4-24 0M47 78l-17 18M52 82l-6 20M59 81l8 16" fill="none" stroke-width="2.8"/><path d="M71 36l1-8M67 36l-3-7M76 39l7-4" fill="none" stroke="${C.dotRed}" stroke-width="2.4"/><path d="M77 43l10 3-10 4" fill="${C.dotRed}" stroke-width="1.8"/><circle cx="70" cy="42" r="2" fill="${C.dotRed}" stroke="none"/><path d="M50 63c5 3 8 7 9 13M46 70c5 2 8 6 9 11" fill="none" stroke-width="1.7"/></g>`}
+    function bambooStick(x,y,color=C.green){return `<g ${stroke(color,2.8)}><rect x="${x-3.6}" y="${y-14}" width="7.2" height="28" rx="3.4"/><path d="M${x-3.3} ${y-5}h6.6M${x-3.3} ${y+5}h6.6" stroke-width="1.5"/></g>`}
+    const BAM={2:[[34,35],[66,86]],3:[[34,30],[66,60],[34,91]],4:[[32,34],[68,34],[32,86],[68,86]],5:[[30,30],[70,30],[50,60],[30,91],[70,91]],6:[[31,26],[69,26],[31,60],[69,60],[31,94],[69,94]],7:[[31,24],[69,24],[50,49],[31,68],[69,68],[31,97],[69,97]],8:[[33,20],[67,20],[33,47],[67,47],[33,74],[67,74],[33,101],[67,101]],9:[[27,23],[50,23],[73,23],[27,60],[50,60],[73,60],[27,97],[50,97],[73,97]]};
+    const BAM_RED={3:[1],5:[2],6:[2,3],7:[2],8:[3,4],9:[4]};
+    function bam(n){if(n===1)return wrap(bird(),'一條');return wrap(BAM[n].map(([x,y],i)=>bambooStick(x,y,(BAM_RED[n]||[]).includes(i)?C.dotRed:C.green)).join(''),`${CN[n-1]}條`)}
+    function pip(x,y,color,r=7.8){return `<g><circle cx="${x}" cy="${y}" r="${r}" fill="${C.paper}" stroke="${color}" stroke-width="2.8"/><circle cx="${x}" cy="${y}" r="${r-3.1}" fill="none" stroke="${color}" stroke-width="1.2"/><circle cx="${x}" cy="${y}" r="2" fill="${color}"/></g>`}
+    const DOT={2:[[34,33],[66,88]],3:[[34,26],[50,60],[66,95]],4:[[31,31],[69,31],[31,89],[69,89]],5:[[30,30],[70,30],[50,60],[30,91],[70,91]],6:[[31,25],[69,25],[31,60],[69,60],[31,95],[69,95]],7:[[31,23],[69,23],[50,45],[31,67],[69,67],[31,96],[69,96]],8:[[33,19],[67,19],[33,46],[67,46],[33,74],[67,74],[33,101],[67,101]],9:[[27,22],[50,22],[73,22],[27,60],[50,60],[73,60],[27,98],[50,98],[73,98]]};
+    const PIP_COLORS={2:['blue','green'],3:['blue','red','green'],4:['green','green','red','red'],5:['green','green','red','green','green'],6:['blue','blue','red','red','green','green'],7:['blue','blue','red','green','green','green','green'],8:['blue','blue','blue','blue','blue','blue','blue','blue'],9:['green','green','green','red','red','red','blue','blue','blue']};
+    function dot(n){if(n===1)return wrap(`<circle cx="50" cy="60" r="28" fill="${C.paper}" stroke="${C.blue}" stroke-width="2.6"/><circle cx="50" cy="60" r="23" fill="${C.green}"/><circle cx="50" cy="60" r="17" fill="${C.paper}"/><circle cx="50" cy="60" r="12" fill="${C.dotRed}"/><circle cx="50" cy="60" r="6" fill="#f8e89b"/><path d="M50 43v34M33 60h34M38 48l24 24M62 48L38 72" ${stroke(C.green,1.5)}/>`,'一餅');return wrap(DOT[n].map(([x,y],i)=>{const key=PIP_COLORS[n][i];return pip(x,y,C[key==='blue'?'dotBlue':key==='red'?'dotRed':'green'],n>=8?6.7:7.8)}).join(''),`${CN[n-1]}餅`)}
+    function dragon(type){if(type==='red')return wrap(`<text x="50" y="81" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="61" font-weight="900" fill="${C.red}">中</text>`,'红中');if(type==='green')return wrap(`<text x="50" y="80" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="56" font-weight="900" fill="${C.green}">發</text>`,'发财');return wrap(`<rect x="24" y="22" width="52" height="77" rx="2" fill="none" stroke="${C.blue}" stroke-width="5"/><rect x="31" y="29" width="38" height="63" fill="none" stroke="${C.blue}" stroke-width="1.5"/>`,'白板')}
+    const FACES=new Map();CN.forEach((_,i)=>FACES.set(GLYPHS[i],man(i+1)));CN.forEach((_,i)=>FACES.set(GLYPHS[i+9],bam(i+1)));CN.forEach((_,i)=>FACES.set(GLYPHS[i+18],dot(i+1)));FACES.set(GLYPHS[27],dragon('red'));FACES.set(GLYPHS[28],dragon('green'));FACES.set(GLYPHS[29],dragon('white'));
+    function replaceFaces(doc){doc.querySelectorAll('.tile .glyph:not([data-svg-face])').forEach(el=>{const key=(el.textContent||'').replace(/[\uFE0E\uFE0F]/g,'');const face=FACES.get(key);if(!face)return;el.dataset.svgFace='1';el.classList.add('svg-art');el.innerHTML=face})}
+    frame.addEventListener('load',()=>{
+      const doc=frame.contentDocument;const style=doc.createElement('style');style.textContent='.tile .glyph.svg-art{display:block;width:100%;height:100%;transform:none;font-size:0}.tile .glyph.svg-art svg{display:block;width:100%;height:100%}.tile{color:initial}';doc.head.append(style);replaceFaces(doc);
+      new MutationObserver(()=>replaceFaces(doc)).observe(doc.querySelector('#board'),{childList:true,subtree:true})
+    });
+  </script>
+</body>
+</html>
