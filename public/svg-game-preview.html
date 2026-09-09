@@ -31,8 +31,8 @@
     const FACES=new Map(GLYPHS.map((glyph,index)=>[glyph,referenceFace(index)]));
     function replaceFaces(doc){doc.querySelectorAll('.tile .glyph:not([data-svg-face])').forEach(el=>{const key=(el.textContent||'').replace(/[\uFE0E\uFE0F]/g,'');const face=FACES.get(key);if(!face)return;el.dataset.svgFace='1';el.classList.add('svg-art');el.innerHTML=face})}
     frame.addEventListener('load',()=>{
-      const doc=frame.contentDocument;const style=doc.createElement('style');style.textContent='.tile .glyph.svg-art{display:block;width:100%;height:100%;transform:none;font-size:0}.tile .glyph.svg-art svg{display:block;width:100%;height:100%}.tile{color:initial}';doc.head.append(style);replaceFaces(doc);
-      frame.contentWindow.setInterval(()=>replaceFaces(doc),80)
+      const doc=frame.contentDocument;const style=doc.createElement('style');style.textContent='.tile .glyph:not([data-svg-face]){visibility:hidden}.tile .glyph.svg-art{display:block;width:100%;height:100%;transform:none;font-size:0;visibility:visible}.tile .glyph.svg-art svg{display:block;width:100%;height:100%}.tile{color:initial}';doc.head.append(style);replaceFaces(doc);
+      const observer=new frame.contentWindow.MutationObserver(()=>replaceFaces(doc));observer.observe(doc.body,{childList:true,subtree:true})
     });
   </script>
 </body>
