@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>挪对对 · SVG 麻将牌面预览</title>
+  <style>
+    :root{--ink:#174f4c;--paper:#fbfcf7;--red:#d33831;--blue:#285aa1;--green:#247447;--line:#c9d0cb}
+    *{box-sizing:border-box}body{margin:0;min-height:100dvh;background:linear-gradient(145deg,#a8e2f3,#dff6f7 58%,#9bd9ed);font-family:"PingFang SC",Arial,sans-serif;color:var(--ink)}
+    header{padding:28px 20px 22px;text-align:center;background:linear-gradient(#ffad75,#f78e59);color:#fff8e8;text-shadow:1px 2px #92593d}h1{margin:0;font-size:26px}header p{max-width:640px;margin:8px auto 0;font-size:14px;line-height:1.5;text-shadow:none;color:#6a493a;font-weight:700}
+    main{width:min(1120px,100%);margin:auto;padding:20px 14px 42px}.note{margin:0 auto 18px;padding:12px 14px;max-width:840px;border:1px solid #7ab7a9;border-radius:12px;background:#f7fff8;color:#386c62;font-size:14px;line-height:1.55}
+    .section{margin:18px 0 24px;padding:14px;border:4px solid #a9663a;border-radius:16px;background:#55bd91;box-shadow:inset 0 0 12px #176b5e80,0 3px #66999a}.section h2{margin:0 0 12px;padding-left:4px;color:#fff9e5;text-shadow:1px 2px #3d7366;font-size:18px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:12px}
+    .sample{min-width:0;padding:8px 5px 6px;border-radius:10px;background:#eaf7efcc;text-align:center;box-shadow:0 1px #246f60}.sample b{display:block;margin-top:5px;font-size:12px;color:#275e55}.tile{display:grid;place-items:center;width:100%;aspect-ratio:1/1.22;border:1px solid var(--line);border-radius:2px;background:var(--paper);box-shadow:inset 0 0 3px #fff,0 1px 1px #4a777555;overflow:hidden}.tile svg{width:94%;height:94%;display:block}
+    .palette{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:18px auto;max-width:840px}.swatch{display:flex;align-items:center;gap:6px;padding:6px 9px;border-radius:20px;background:#ffffffaa;font-size:12px;font-weight:800}.dot{width:14px;height:14px;border-radius:50%;border:1px solid #fff;box-shadow:0 0 0 1px #708e86}
+    footer{text-align:center;color:#4d7772;font-size:12px}@media(max-width:520px){header{padding-top:22px}h1{font-size:22px}.tiles{grid-template-columns:repeat(5,1fr);gap:6px}.section{padding:8px;border-width:3px}.section h2{font-size:15px;margin-bottom:7px}.sample{padding:4px 2px;border-radius:5px}.sample b{margin-top:3px;font-size:10px}.note{font-size:12px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>挪对对 · SVG 麻将牌面预览</h1>
+    <p>独立视觉试验页：不影响当前游戏。所有图案均由 SVG 代码绘制，可统一控制颜色、线宽、比例与细节。</p>
+  </header>
+  <main>
+    <p class="note">当前方向：用深蓝、朱红、墨绿三种主色重新绘制牌面。你确认视觉后，再把这一套 SVG 接入游戏；届时不会改变配对、拖动、存档或排行榜逻辑。</p>
+    <div class="palette">
+      <span class="swatch"><i class="dot" style="background:#285aa1"></i>万字蓝 #285AA1</span><span class="swatch"><i class="dot" style="background:#d33831"></i>万字红 #D33831</span><span class="swatch"><i class="dot" style="background:#247447"></i>条子绿 #247447</span><span class="swatch"><i class="dot" style="background:#326fa5"></i>饼子蓝 #326FA5</span><span class="swatch"><i class="dot" style="background:#d94a46"></i>饼子红 #D94A46</span>
+    </div>
+    <section class="section"><h2>萬子</h2><div class="tiles" id="man"></div></section>
+    <section class="section"><h2>條子</h2><div class="tiles" id="bam"></div></section>
+    <section class="section"><h2>餅子</h2><div class="tiles" id="dot"></div></section>
+    <section class="section"><h2>三元牌</h2><div class="tiles" id="dragon"></div></section>
+    <footer>SVG 预览版 · 仅用于确定牌面视觉方向</footer>
+  </main>
+  <script>
+    const NS='http://www.w3.org/2000/svg';
+    const colors={red:'#d33831',blue:'#285aa1',green:'#247447',dotBlue:'#326fa5',dotRed:'#d94a46',dark:'#174f4c',paper:'#fbfcf7'};
+    const cn=['一','二','三','四','五','六','七','八','九'];
+    const svg=(content,label)=>`<svg viewBox="0 0 100 122" role="img" aria-label="${label}" xmlns="${NS}">${content}</svg>`;
+    const stroke=(color,width=3)=>`fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`;
+    function man(n){return svg(`<text x="50" y="43" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="39" font-weight="900" fill="${colors.blue}">${cn[n-1]}</text><text x="50" y="87" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="42" font-weight="900" fill="${colors.red}">萬</text><path d="M20 98h60" ${stroke('#d8ddd4',1)}/>` ,`${cn[n-1]}萬`)}
+    function bird(){return `<g ${stroke(colors.green,3)}><path d="M28 76c6-22 18-33 31-34 4 0 9 2 12 6-7 3-10 8-10 15 7-2 13 1 17 7-12 3-20 2-27-1-2 11-8 20-18 26"/><path d="M42 58l-11-7M47 52l-5-13M60 57l9-12M56 67l13 5M34 76l-8 11"/><circle cx="63" cy="52" r="1.8" fill="${colors.red}" stroke="none"/></g>`}
+    function bambooStick(x,y,red=false){return `<g><rect x="${x-4}" y="${y-12}" width="8" height="24" rx="3" fill="${red?colors.dotRed:colors.green}"/><path d="M${x-4} ${y-4}h8M${x-4} ${y+4}h8" ${stroke('#e2f5e8',1)}/></g>`}
+    const bamPositions={2:[[31,34],[69,83]],3:[[31,30],[50,59],[69,88]],4:[[31,33],[69,33],[31,85],[69,85]],5:[[28,30],[72,30],[50,59],[28,88],[72,88]],6:[[28,27],[72,27],[28,59],[72,59],[28,91],[72,91]],7:[[27,27],[73,27],[27,58],[73,58],[50,58],[27,90],[73,90]],8:[[27,25],[50,25],[73,25],[27,61],[73,61],[27,93],[50,93],[73,93]],9:[[27,23],[50,23],[73,23],[27,58],[50,58],[73,58],[27,93],[50,93],[73,93]]};
+    function bam(n){if(n===1)return svg(bird(),'一條');const ps=bamPositions[n];return svg(ps.map(([x,y],i)=>bambooStick(x,y,n>4&&i===Math.floor(ps.length/2))).join(''),`${cn[n-1]}條`)}
+    function pip(x,y,color){return `<g><circle cx="${x}" cy="${y}" r="9" fill="${colors.paper}" stroke="${color}" stroke-width="3"/><circle cx="${x}" cy="${y}" r="3.1" fill="${color}"/><circle cx="${x-3}" cy="${y-3}" r="1" fill="#fff"/></g>`}
+    const dotPositions={2:[[31,35],[69,84]],3:[[31,28],[50,59],[69,90]],4:[[30,31],[70,31],[30,87],[70,87]],5:[[29,30],[71,30],[50,59],[29,88],[71,88]],6:[[29,26],[71,26],[29,59],[71,59],[29,92],[71,92]],7:[[28,25],[72,25],[28,58],[72,58],[50,58],[28,92],[72,92]],8:[[28,23],[50,23],[72,23],[28,59],[72,59],[28,94],[50,94],[72,94]],9:[[28,21],[50,21],[72,21],[28,58],[50,58],[72,58],[28,95],[50,95],[72,95]]};
+    function dot(n){if(n===1)return svg(`<circle cx="50" cy="60" r="31" fill="${colors.paper}" stroke="${colors.dark}" stroke-width="4"/><circle cx="50" cy="60" r="23" fill="${colors.green}"/><circle cx="50" cy="60" r="16" fill="${colors.paper}"/><circle cx="50" cy="60" r="10" fill="${colors.dotRed}"/><path d="M50 45v30M35 60h30M40 50l20 20M60 50L40 70" ${stroke('#fff7d8',2)}/>`,'一餅');const ps=dotPositions[n];return svg(ps.map(([x,y],i)=>pip(x,y,n===5&&i===2?colors.dotRed:(i%3===0?colors.dotBlue:colors.green))).join(''),`${cn[n-1]}餅`)}
+    function dragon(type){if(type==='red')return svg(`<text x="50" y="81" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="61" font-weight="900" fill="${colors.red}">中</text>`,'红中');if(type==='green')return svg(`<text x="50" y="80" text-anchor="middle" font-family="STKaiti,KaiTi,serif" font-size="56" font-weight="900" fill="${colors.green}">發</text>`,'发财');return svg(`<rect x="24" y="22" width="52" height="77" rx="2" fill="none" stroke="${colors.blue}" stroke-width="5"/><rect x="31" y="29" width="38" height="63" fill="none" stroke="${colors.blue}" stroke-width="1.5"/>`,'白板')}
+    function sample(label,face){return `<article class="sample"><div class="tile">${face}</div><b>${label}</b></article>`}
+    document.querySelector('#man').innerHTML=cn.map((x,i)=>sample(`${x}萬`,man(i+1))).join('');
+    document.querySelector('#bam').innerHTML=cn.map((x,i)=>sample(`${x}條`,bam(i+1))).join('');
+    document.querySelector('#dot').innerHTML=cn.map((x,i)=>sample(`${x}餅`,dot(i+1))).join('');
+    document.querySelector('#dragon').innerHTML=[['红中','red'],['发财','green'],['白板','white']].map(([label,type])=>sample(label,dragon(type))).join('');
+  </script>
+</body>
+</html>
