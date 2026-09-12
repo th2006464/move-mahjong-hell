@@ -72,8 +72,8 @@ function animateMove(fromPos,toPos){
   grid[toPos.r][toPos.c]=card;
   if(!aligned(toPos)){
     grid[toPos.r][toPos.c]=null;grid[fromPos.r][fromPos.c]=card;selected=null;animating=true;
-    source.style.transition='transform .18s ease-out';source.style.transform='translate(0,0)';
-    setTimeout(()=>{animating=false;render();status('未形成配对，麻将已返回原位')},190);return
+    source.style.transition='transform .14s ease-out';source.style.transform='translate(0,0)';
+    setTimeout(()=>{animating=false;render();status('未形成配对，麻将已返回原位')},155);return
   }
   selected=null;render();
   const target=[...board.children].find(e=>+e.dataset.r===toPos.r&&+e.dataset.c===toPos.c);
@@ -83,10 +83,10 @@ function animateMove(fromPos,toPos){
   target.style.zIndex='20';
   animating=true;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    target.style.transition='transform .18s ease-out';
+    target.style.transition='transform .14s ease-out';
     target.style.transform='translate(0,0)';
   }));
-  setTimeout(()=>{animating=false;const pair=aligned(toPos);if(pair)remove(toPos,pair,'对齐成功，自动消除！');else{render();status('已挪动，继续寻找同牌')}},210)
+  setTimeout(()=>{animating=false;const pair=aligned(toPos);if(pair)remove(toPos,pair,'对齐成功，自动消除！');else{render();status('已挪动，继续寻找同牌')}},165)
 }
 function moveGroup(fromPos,toPos){
   if(paused||animating||grid[toPos.r][toPos.c])return;
@@ -110,20 +110,20 @@ function moveGroup(fromPos,toPos){
   destinations.forEach(d=>grid[d.r][d.c]=d.card);
   if(!destinations.some(d=>aligned(d))){
     destinations.forEach(d=>grid[d.r][d.c]=null);sources.forEach(s=>grid[s.r][s.c]=s.card);selected=null;animating=true;
-    sourceTiles.forEach(tile=>{tile.style.transition='transform .18s ease-out';tile.style.transform='translate(0,0)'});
-    setTimeout(()=>{animating=false;render();status('未形成配对，牌组已返回原位')},190);return
+    sourceTiles.forEach(tile=>{tile.style.transition='transform .15s ease-out';tile.style.transform='translate(0,0)'});
+    setTimeout(()=>{animating=false;render();status('未形成配对，牌组已返回原位')},165);return
   }
   selected=null;render();animating=true;
   destinations.forEach((d,i)=>{
     const tile=[...board.children].find(e=>+e.dataset.r===d.r&&+e.dataset.c===d.c),to=tile.getBoundingClientRect(),from=starts[i];
     tile.style.transition='none';tile.style.transform=`translate(${from.left-to.left}px,${from.top-to.top}px)`;tile.style.zIndex='20';
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{tile.style.transition='transform .2s ease-out';tile.style.transform='translate(0,0)'}));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{tile.style.transition='transform .15s ease-out';tile.style.transform='translate(0,0)'}));
   });
   setTimeout(()=>{
     animating=false;const used=new Set();let removed=0;
     destinations.forEach(d=>{const key=`${d.r},${d.c}`;if(used.has(key)||!grid[d.r][d.c])return;const pair=aligned(d);if(pair){grid[d.r][d.c]=null;grid[pair.r][pair.c]=null;used.add(key);used.add(`${pair.r},${pair.c}`);score+=1;removed++}});
     if(removed)playMatchSound();render();status(`整体移动并消除 ${removed} 对！`);checkGameState()
-  },230)
+  },175)
 }
 function move(p,dr,dc,steps=1){
   if(paused||animating)return;
