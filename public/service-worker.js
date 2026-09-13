@@ -1,9 +1,9 @@
-const CACHE_NAME='mahjong-shell-v2';
+const CACHE_NAME='mahjong-shell-v3';
 const CORE_SHELL=['/','/reference-game','/manifest.webmanifest','/icons/icon-192.png','/assets/reference-tile-atlas.webp'];
 const OFFLINE_ASSETS=[...CORE_SHELL,'/icons/icon-512.png','/audio/background.mp3','/audio/match.mp3'];
 
 self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE_SHELL)).then(()=>self.skipWaiting()));
 });
 
 self.addEventListener('activate',event=>{
@@ -39,15 +39,15 @@ self.addEventListener('message',event=>{
   }
 });
 
-async function networkFirst(request,fallback){
+async function navigationCacheFirst(request,fallback){
   const cache=await caches.open(CACHE_NAME);
+  const cached=(await cache.match(request))||(await cache.match(fallback));
+  if(cached)return cached;
   try{
     const response=await fetch(request);
     if(response.ok)await cache.put(request,response.clone());
     return response;
-  }catch{
-    return (await cache.match(request))||(fallback?await cache.match(fallback):undefined)||Response.error();
-  }
+  }catch{return Response.error()}
 }
 
 async function leaderboard(request){
@@ -73,7 +73,7 @@ self.addEventListener('fetch',event=>{
   if(url.pathname.startsWith('/api/'))return;
   if(request.mode==='navigate'){
     const fallback=url.pathname.startsWith('/reference-game')?'/reference-game':'/';
-    event.respondWith(networkFirst(request,fallback));return;
+    event.respondWith(navigationCacheFirst(request,fallback));return;
   }
   event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(async response=>{
     if(response.ok){const cache=await caches.open(CACHE_NAME);await cache.put(request,response.clone())}

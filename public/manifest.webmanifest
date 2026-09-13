@@ -1,6 +1,7 @@
 {
   "name": "挪对对 · 地狱模式",
   "short_name": "挪对对",
+  "id": "/reference-game",
   "description": "20×24 麻将滑动配对解谜游戏",
   "lang": "zh-CN",
   "start_url": "/reference-game",
