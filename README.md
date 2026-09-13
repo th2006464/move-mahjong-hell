@@ -63,6 +63,23 @@
 - **背景音乐**：进入游戏后循环播放；若浏览器限制自动播放，会在首次操作时开始
 - **消除音效**：每次成功配对消除时播放反馈音
 - **Safari 适配**：抑制边缘横滑导航、双击缩放、文字选择和长按菜单误触
+- **离线模式**：在设置中手动下载完整游戏资源，完成后可从主屏幕图标飞行模式冷启动
+
+## 离线游玩与安装
+
+项目采用 PWA 与 Service Worker 缓存。核心页面使用缓存优先策略，断网冷启动不会先等待网络；牌面图集、图标、背景音乐和消除音效可通过点击设置中的“下载离线版”一次性保存。
+
+iPhone / iPad 使用方法：
+
+1. 使用 Safari 打开游戏并添加到主屏幕。
+2. 保持联网，从主屏幕图标打开游戏。
+3. 进入“设置”，点击“下载离线版”。
+4. 等待出现“离线版已准备完成”和“离线启动已验证”。
+5. 此后可以完全退出游戏，开启飞行模式，再从主屏幕图标冷启动。
+
+离线时可以正常开局、计时、消除以及读取本机存档。云存档和排行榜需要网络；离线保存的进度会进入本机待同步队列，恢复网络并再次打开游戏后自动上传。
+
+每次发布新版时会更换缓存版本。游戏会自动安装新版离线组件；挪对对出现“发现新版本”时，点击“刷新更新”即可切换。若 iOS 长期未使用应用或系统存储空间紧张，系统可能清理网站数据，此时需联网重新执行一次“下载离线版”。
 
 ## 技术结构
 
@@ -71,6 +88,9 @@ move-mahjong-hell/
 ├── public/index.html                       # 游戏界面、规则和交互
 ├── public/assets/reference-tile-atlas.webp # 参考图麻将牌面图集
 ├── public/audio/                           # 背景音乐与消除音效
+├── public/service-worker.js                # 离线资源缓存与版本切换
+├── public/manifest.webmanifest             # PWA 安装配置
+├── public/icons/                           # 主屏幕应用图标
 ├── src/index.js                            # Worker API 与静态资源入口
 ├── migrations/0001_mahjong_progress_and_scores.sql
 ├── migrations/0002_mahjong_save_history.sql
@@ -102,7 +122,7 @@ npx wrangler dev
 
 ## D1 数据库
 
-项目复用现有的 `sum-ten-game-data` D1 数据库，并使用三张独立数据表：
+项目与凑十游戏共用 `game-data` D1 数据库，并使用三张独立数据表：
 
 - `mahjong_saves`：玩家云端进度
 - `mahjong_save_history`：带保存时间的历史进度
@@ -111,7 +131,7 @@ npx wrangler dev
 首次部署前执行迁移：
 
 ```bash
-npx wrangler d1 migrations apply sum-ten-game-data --remote
+npx wrangler d1 migrations apply game-data --remote
 ```
 
 ## 部署
