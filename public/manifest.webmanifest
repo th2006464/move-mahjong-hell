@@ -1,0 +1,16 @@
+{
+  "name": "挪对对 · 地狱模式",
+  "short_name": "挪对对",
+  "description": "20×24 麻将滑动配对解谜游戏",
+  "lang": "zh-CN",
+  "start_url": "/reference-game",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#a9ddef",
+  "theme_color": "#ff9c62",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
