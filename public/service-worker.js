@@ -1,8 +1,9 @@
-const CACHE_NAME='mahjong-shell-v1';
-const APP_SHELL=['/','/reference-game','/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/assets/reference-tile-atlas.webp','/audio/background.mp3','/audio/match.mp3'];
+const CACHE_NAME='mahjong-shell-v2';
+const CORE_SHELL=['/','/reference-game','/manifest.webmanifest','/icons/icon-192.png','/assets/reference-tile-atlas.webp'];
+const OFFLINE_ASSETS=[...CORE_SHELL,'/icons/icon-512.png','/audio/background.mp3','/audio/match.mp3'];
 
 self.addEventListener('install',event=>{
-  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE_SHELL)));
 });
 
 self.addEventListener('activate',event=>{
@@ -13,7 +14,29 @@ self.addEventListener('activate',event=>{
 });
 
 self.addEventListener('message',event=>{
-  if(event.data?.type==='SKIP_WAITING')event.waitUntil(self.skipWaiting());
+  if(event.data?.type==='SKIP_WAITING'){event.waitUntil(self.skipWaiting());return}
+  const port=event.ports[0];if(!port)return;
+  if(event.data?.type==='CHECK_OFFLINE'){
+    event.waitUntil(caches.open(CACHE_NAME).then(async cache=>{
+      const matches=await Promise.all(OFFLINE_ASSETS.map(asset=>cache.match(asset)));
+      port.postMessage({type:'status',ready:matches.every(Boolean),version:CACHE_NAME});
+    }));
+    return;
+  }
+  if(event.data?.type==='DOWNLOAD_OFFLINE'){
+    event.waitUntil((async()=>{
+      try{
+        const cache=await caches.open(CACHE_NAME);
+        for(let i=0;i<OFFLINE_ASSETS.length;i++){
+          const asset=OFFLINE_ASSETS[i],response=await fetch(asset,{cache:'reload'});
+          if(!response.ok)throw new Error(`资源下载失败：${asset}`);
+          await cache.put(asset,response);
+          port.postMessage({type:'progress',current:i+1,total:OFFLINE_ASSETS.length});
+        }
+        port.postMessage({type:'complete',version:CACHE_NAME});
+      }catch(error){port.postMessage({type:'error',message:error.message||'离线资源下载失败'})}
+    })());
+  }
 });
 
 async function networkFirst(request,fallback){
