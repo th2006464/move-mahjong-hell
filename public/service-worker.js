@@ -1,4 +1,4 @@
-const CACHE_NAME='mahjong-shell-v3';
+const CACHE_NAME='mahjong-shell-v4';
 const CORE_SHELL=['/','/reference-game','/manifest.webmanifest','/icons/icon-192.png','/assets/reference-tile-atlas.webp'];
 const OFFLINE_ASSETS=[...CORE_SHELL,'/icons/icon-512.png','/audio/background.mp3','/audio/match.mp3'];
 
